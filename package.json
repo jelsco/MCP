@@ -1,0 +1,44 @@
+{
+  "name": "@replenishradar/mcp-server",
+  "version": "1.0.1",
+  "description": "ReplenishRadar MCP server — connects Claude Desktop and other MCP clients to live inventory data for Shopify and Amazon sellers",
+  "main": "dist/index.js",
+  "bin": { "replenishradar-mcp": "dist/index.js" },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "inventory",
+    "shopify",
+    "amazon",
+    "e-commerce",
+    "purchase-orders",
+    "stockout",
+    "demand-forecasting",
+    "claude",
+    "ai-agent"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ReplenishRadar/MCP.git"
+  },
+  "homepage": "https://replenishradar.com",
+  "bugs": {
+    "url": "https://github.com/ReplenishRadar/MCP/issues"
+  }
+}
