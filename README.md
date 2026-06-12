@@ -1,20 +1,11 @@
-# ReplenishRadar MCP Server
+# @replenishradar/mcp-server
 
-> Agent-ready inventory intelligence for Shopify and Amazon sellers. Stockout risk, demand forecasts, purchase order recommendations, and real-time alerts — all accessible to AI agents via the Model Context Protocol.
+Connect AI agents to live [ReplenishRadar](https://replenishradar.com) inventory data. Works with Claude Desktop, OpenClaw, and any MCP-compatible client.
 
-[![npm](https://img.shields.io/npm/v/@replenishradar/mcp-server)](https://www.npmjs.com/package/@replenishradar/mcp-server)
-[![MCP](https://img.shields.io/badge/MCP-compatible-blue)](https://modelcontextprotocol.io/)
+## Setup
 
-## What is it?
-
-The ReplenishRadar MCP server lets AI agents (Claude Desktop, custom agents, n8n workflows) query live multi-channel inventory data, request purchase order recommendations, create and manage POs, and trigger inventory syncs — with full human-in-the-loop safeguards.
-
-All write operations create **drafts only**. No agent can send a PO to a supplier without explicit human approval.
-
-## Quick Start (Claude Desktop)
-
-1. Get an API key from **ReplenishRadar > Settings > API Keys**
-2. Add to your Claude Desktop config (`~/.claude/claude_desktop_config.json`):
+1. Get your API key from **ReplenishRadar > Settings > API Keys**.
+2. Add this server to your MCP client config. In Claude Desktop, open **Settings > Developer > Edit Config**:
 
 ```json
 {
@@ -23,148 +14,125 @@ All write operations create **drafts only**. No agent can send a PO to a supplie
       "command": "npx",
       "args": ["-y", "@replenishradar/mcp-server"],
       "env": {
-        "REPLENISHRADAR_API_KEY": "rr_sk_live_your_key_here"
+        "REPLENISHRADAR_API_KEY": "rr_sk_your_key_here"
       }
     }
   }
 }
 ```
 
-3. Restart Claude Desktop
-4. Ask: *"What are my top stockout risks?"* or *"Draft POs for everything critical"*
+3. Restart Claude Desktop and ask: "What are my top stockout risks?"
 
-## Tools (28)
+No ReplenishRadar account yet? Use the public agent intake endpoint to request a short-lived, read-only sandbox key before configuring the server:
 
-### Read Tools (18) — Growth+ tier
-
-| Tool | Description |
-|------|-------------|
-| `rr_list_items` | Searchable SKU catalog with stock status |
-| `rr_get_inventory_position` | On-hand, in-transit, reserved quantities by location |
-| `rr_get_stockout_risk` | Risk levels, days of stock, recommended order quantities |
-| `rr_get_demand_forecast` | Demand forecast stats for any period |
-| `rr_get_suggested_purchase_orders` | AI-generated PO recommendations with costs |
-| `rr_get_alerts` | Active inventory and operational alerts |
-| `rr_get_sync_status` | Inventory sync history and status |
-| `rr_list_suppliers` | Vendor/supplier catalog with lead times |
-| `rr_list_purchase_orders` | Browse all POs with filtering |
-| `rr_get_purchase_order` | Detailed PO with line items and history |
-| `rr_get_po_pdf` | PO PDF document info |
-| `rr_get_po_documents` | Documents attached to a PO |
-| `rr_get_sales_history` | Historical sales data by SKU and channel |
-| `rr_get_top_sellers` | Ranked by units/revenue/growth |
-| `rr_get_slow_movers` | Dead stock and carrying cost estimates |
-| `rr_get_inventory_value` | On-hand + in-transit value breakdown |
-| `rr_get_sku_health` | Velocity, margin, stock score, lifecycle |
-| `rr_get_lost_sales` | Revenue lost to stockout events |
-
-### Write Tools (10) — Growth+ creation, Scale operations
-
-| Tool | Description |
-|------|-------------|
-| `rr_trigger_sync` | Manually trigger inventory sync |
-| `rr_acknowledge_alert` | Mark alert as seen + add agent note |
-| `rr_create_purchase_order` | Create draft PO (always draft-only, no auto-send) |
-| `rr_update_purchase_order` | Modify draft PO details |
-| `rr_add_po_note` | Add internal notes to PO |
-| `rr_request_approval` | Request human approval (generates signed approval URL) |
-| `rr_send_purchase_order` | Send approved PO to supplier |
-| `rr_cancel_purchase_order` | Cancel draft or sent PO |
-| `rr_get_document_upload_url` | S3 presigned URL for PI/invoice upload |
-| `rr_record_pi_review` | Log proforma invoice details and variances |
-
-## Setup Patterns
-
-### Claude Desktop (5 minutes)
-
-See [Quick Start](#quick-start-claude-desktop) above.
-
-### Custom Agent (Python + Claude API)
-
-```python
-import anthropic
-from replenishradar import ReplenishRadarMCPClient
-
-rr = ReplenishRadarMCPClient(api_key="rr_sk_live_...")
-client = anthropic.Anthropic()
-tools = rr.get_tools()
-
-response = client.messages.create(
-    model="claude-sonnet-4-20250514",
-    max_tokens=4096,
-    tools=tools,
-    messages=[{"role": "user", "content": "Draft POs for my critical SKUs"}],
-    system="You are an inventory operations agent. Create draft POs only."
-)
+```text
+POST https://api.replenishradar.com/api/public/agent-intake
 ```
 
-### OpenClaw + Slack/Discord
+## Available Tools
 
-1. In ReplenishRadar: Settings > API Keys > Create (scope: write)
-2. In OpenClaw: Tools > Add MCP Server > URL: `https://api.replenishradar.com/mcp`, Auth: `Bearer rr_sk_live_...`
-3. Configure webhook: Settings > API & Webhooks > Subscribe to events
-4. Agent receives stockout alerts and can act on them in Slack/Discord
+### Read
 
-### n8n / Make (No-Code)
+Standard includes limited read API access. Growth adds diagnosis/status read tools.
 
-Call the REST API directly at `https://api.replenishradar.com/api/mcp/call` with your API key in the `Authorization` header.
+| Tool | Description |
+|------|-------------|
+| `rr_get_stockout_risk` | Stockout risk levels for SKUs |
+| `rr_get_inventory_position` | Stock-by-location for an item |
+| `rr_get_demand_forecast` | Demand forecast stats |
+| `rr_get_suggested_purchase_orders` | Suggested POs |
+| `rr_get_replenishment_actions` | Canonical buyer replenishment actions |
+| `rr_get_replenishment_action` | One replenishment action with event history |
+| `rr_get_alerts` | Active alerts |
+| `rr_list_items` | List inventory items |
+| `rr_get_sync_status` | Recent sync history |
+| `rr_list_suppliers` | List vendors/suppliers |
+| `rr_list_purchase_orders` | List purchase orders |
+| `rr_get_purchase_order` | Single PO with line items |
+| `rr_get_po_pdf` | PO PDF info |
+| `rr_get_po_documents` | Documents attached to a PO |
+| `rr_get_po_notes` | Notes attached to a PO |
+| `rr_get_sales_history` | Sales history |
+| `rr_get_top_sellers` | Top-selling SKUs |
+| `rr_get_slow_movers` | Slow-moving SKUs |
+| `rr_get_inventory_value` | Inventory value breakdown |
+| `rr_get_sku_health` | SKU-level health summary |
+| `rr_get_lost_sales` | Estimated lost sales from stockouts |
+| `rr_get_store_health` | Store connection and sync health |
+| `rr_get_data_freshness` | Freshness status by data dimension |
+| `rr_get_setup_status` | Setup milestones and next step |
+| `rr_get_recent_activity` | Recent alerts, POs, and sync rollup |
+| `search_knowledge` | ReplenishRadar product knowledge search |
+| `rr_evaluate_fit` | Deterministic ICP + tier fit verdict (no org data) |
 
-For detailed setup guides and system prompt templates, see [docs/SETUP.md](docs/SETUP.md).
+### Basic write (Standard tier and up)
+
+Safe, low-blast-radius writes - no money or stock mutation.
+
+| Tool | Description |
+|------|-------------|
+| `rr_acknowledge_alert` | Acknowledge an alert |
+| `rr_add_po_note` | Add a note to a PO |
+| `rr_request_approval` | Request human approval for a PO |
+| `rr_add_replenishment_action_note` | Add a note to a replenishment action |
+| `rr_dismiss_replenishment_action` | Dismiss a replenishment action |
+| `rr_prepare_replenishment_action` | Preview an action and get its current `updated_at` before execute |
+| `rr_execute_replenishment_action` | Execute an action. `mode="draft"` (default) creates a draft PO and/or transfer; `mode="autonomous"` also sends the PO / commits the transfer when the key has sensitive_write + the operation tool group + an enabled budget and all guardrails pass (else draft-fallback or hard-refuse). Idempotent, stale-state protected |
+| `rr_resolve_replenishment_action` | Resolve an action as no-action with a reason; idempotent, stale-state protected |
+| `rr_retry_replenishment_action` | Retry a blocked or failed action via the draft execution path; idempotent, stale-state protected |
+| `rr_get_document_upload_url` | Get upload URL for a PO document |
+| `rr_record_pi_review` | Record proforma invoice details |
+
+### Sensitive write (Growth tier and up)
+
+Money / stock mutation.
+
+| Tool | Description |
+|------|-------------|
+| `rr_trigger_sync` | Trigger inventory sync |
+| `rr_create_purchase_order` | Create a draft PO |
+| `rr_update_purchase_order` | Update a draft PO |
+| `rr_send_purchase_order` | Send an approved PO |
+| `rr_cancel_purchase_order` | Cancel a PO |
+| `rr_create_location` | Create a manual inventory location |
+| `rr_set_stock_at_location` | Set stock at a manual location |
+
+PO creation always starts as a **draft**. `rr_send_purchase_order` only sends a PO that was already human-approved.
+
+Action execution has two modes. `rr_execute_replenishment_action` with `mode="draft"` (the default) creates a draft PO and/or draft transfer for an action's items and never auto-sends to a supplier or commits stock. With `mode="autonomous"` it additionally sends the PO or commits the transfer, but only when the key has `sensitive_write` + the operation's tool group + an enabled per-key budget (`autonomous_enabled=true`) and every guardrail passes; otherwise it leaves a draft and returns an `rr_request_approval` hint (`draft_fallback`) or refuses without mutating (`hard_refuse`). Call `rr_prepare_replenishment_action` first to get the action's current `updated_at`, then pass it as `expected_updated_at` so a stale action is rejected before any write. Pass a stable `idempotency_key` so a retried call replays the original result instead of double-creating artifacts or double-sending.
+
+### Agent context store
+
+A small, org-scoped, auditable key/value memory so an agent can remember bounded workflow state. `rr_get_agent_context` / `rr_list_agent_context` are read-capability; `rr_set_agent_context` / `rr_delete_agent_context` are basic-write. All four are in the `agent_context` tool group.
+
+| Tool | Description |
+|------|-------------|
+| `rr_get_agent_context` | Get one entry by `namespace` + `key`; expired entries are omitted |
+| `rr_set_agent_context` | Store a bounded JSON object under `namespace` + `key` (optional `scope_ref`, `ttl_seconds`) |
+| `rr_list_agent_context` | List live entries for ONE `namespace` (required), bounded `limit` (max 200) |
+| `rr_delete_agent_context` | Delete one entry by `namespace` + `key`; records actor provenance |
+
+Rules and limits:
+
+- **Namespaces are code-owned and per-key allowlisted.** A human admin must grant your API key read/write/delete on each namespace in Settings > API Keys. Same-organization access alone is **not** sufficient.
+- **No secrets, no raw PII.** Writes that look like tokens, passwords, private keys, credentials, or raw emails/phones/addresses are rejected.
+- `value` must be a **JSON object** (not a scalar or array), capped at **16 KiB** serialized.
+- `ttl_seconds` is optional and capped at **90 days**; with no TTL the entry persists while the organization exists.
+- `rr_list_agent_context` **requires** `namespace` and never lists across namespaces.
+- `scope_ref` is descriptive metadata only and is **not** part of uniqueness - encode per-scope entries into the `key` (for example `supplier_rules/sku:ABC123`).
+- Sensitive namespaces (for example `sourcing_economics`) additionally require the key to hold the sensitive economics read capability + tool group.
+
+## Spend budgets (admin-managed, no MCP tool)
+
+Per-API-key spend budgets - per-PO value cap, rolling-24h daily cap, max transfer quantity delta, an `autonomous_enabled` flag, and vendor / destination / transfer-source (or route-pair) allowlists - constrain what an autonomous key may buy or move. They are managed **only** by a human admin in Settings > API Keys (a JWT-admin Settings API); there is no MCP tool to read or change a budget, and an API key cannot reach the budget routes, not even for its own caps. Budgets are consumed only by autonomous send/commit, autonomous mode is off by default, and a denied autonomous action receives only a short decision reason - never the cap amounts, the allowlists, or another key's ledger.
 
 ## Rate Limits
 
-| Tier | Price | API Calls/Hour | Read Tools | Write Tools |
-|------|-------|----------------|------------|-------------|
-| Growth | $199/mo | 100 | All 18 | Draft POs only |
-| Scale | $499/mo | 1,000 | All 18 | Full PO lifecycle |
-| Enterprise | Custom | Unlimited | All 18 | Full + custom SLAs |
+- **Standard** ($99/mo): 10 calls/hour, read + basic-write tools
+- **Growth** ($199/mo): 100 calls/hour, read + basic + sensitive read/write + diagnosis/status tools
+- **Scale** ($499/mo): 1,000 calls/hour, full read + write capability set
 
-## Security
+## Learn More
 
-- **Org-scoped API keys** — cross-org access impossible at the query layer
-- **Draft-only enforcement** — server-side, not client-side
-- **Circuit breaker** — suspends keys exceeding 200% of hourly limit
-- **Audit logging** — every tool call logged with 7-year retention
-- **Amazon BSA compliant** — identification headers, kill switch, no training on Amazon data
-- **OWASP LLM Top 10** — controls for prompt injection, excessive agency, sensitive data exposure
-
-For full security documentation, see [docs/SECURITY.md](docs/SECURITY.md).
-
-## Architecture
-
-```
-Your agent (Claude, GPT, Gemini, custom)
-         |
-         v
-@replenishradar/mcp-server (stdio bridge)
-         |
-         v
-POST https://api.replenishradar.com/api/mcp/call
-         |
-         v
-ReplenishRadar backend (rate limiting, audit, org-scoping)
-         |
-         v
-Your inventory data (Shopify + Amazon)
-```
-
-The MCP server is a thin stdio bridge that dispatches all tool calls to the ReplenishRadar REST API. Authentication is via `REPLENISHRADAR_API_KEY` environment variable.
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `REPLENISHRADAR_API_KEY` | Yes | — | Your API key (`rr_sk_live_...`) |
-| `REPLENISHRADAR_API_URL` | No | `https://api.replenishradar.com` | API base URL (for self-hosted/testing) |
-
-## Documentation
-
-- [Setup Guide & Agent Patterns](docs/SETUP.md)
-- [Security & Compliance](docs/SECURITY.md)
-- [MCP Setup Blog Post](https://replenishradar.com/blog/connect-ai-agent-amazon-shopify-inventory)
-- [API Docs](https://replenishradar.com/docs/api)
-- [Website](https://replenishradar.com)
-
-## License
-
-Proprietary — see [LICENSE](LICENSE)
+- [MCP Setup Guide](https://replenishradar.com/blog/connect-ai-agent-amazon-shopify-inventory)
+- [ReplenishRadar](https://replenishradar.com)

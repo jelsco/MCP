@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ReplenishRadar/MCP",
+  "title": "ReplenishRadar",
+  "description": "Shopify + Amazon inventory planning, forecasting & replenishment over MCP (49 tools).",
+  "repository": {
+    "url": "https://github.com/ReplenishRadar/MCP",
+    "source": "github"
+  },
+  "version": "1.0.7",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@replenishradar/mcp-server",
+      "version": "1.0.6",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "REPLENISHRADAR_API_KEY",
+          "description": "ReplenishRadar API key with the rr_sk_ prefix.",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "REPLENISHRADAR_API_URL",
+          "description": "Optional API base URL. Defaults to https://api.replenishradar.com.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "default": "https://api.replenishradar.com"
+        }
+      ]
+    }
+  ]
+}
